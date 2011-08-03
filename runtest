@@ -1,0 +1,80 @@
+#!/bin/sh
+
+#set -e
+
+cd $(dirname $0)
+
+x=./append-if-missing
+t=pear
+f=t/x
+
+mkdir -p t
+rm -f $f
+
+# missing args
+m=$($x 2>&1)
+# echo $m - could check this for text content, I suppose.
+if [ "$?" != "2" ]; then
+  echo "FAIL 0 - no args: $? != 2"
+fi
+
+# missing arg for -t option
+m=$($x -t 2>&1)
+r=$?
+if [ "$r" != "2" ]; then
+  echo "FAIL 0 - missing text arg: $r != 2"
+fi
+
+# missing arg for -f option
+m=$($x -f 2>&1)
+r=$?
+if [ "$r" != "2" ]; then
+  echo "FAIL 0 - missing file arg: $r != 2"
+fi
+
+# non existent source file
+m=$($x -f does-not-exist 2>&1)
+r=$?
+if [ "$r" != "1" ]; then
+  echo "FAIL 0 - non-existent file arg: $r != 1"
+fi
+
+u=t/unreadable
+touch $u
+chmod u-r $u
+m=$($x -f $u 2>&1)
+r=$?
+if [ "$r" != "1" ]; then
+  echo "FAIL 0 - unreadable file arg: $r != 1"
+fi
+rm -f $u
+
+# text arg
+# missing file -> new file with content
+$x -t $t $f
+if [ "$(cat $f|md5sum)" != "$(echo $t|md5sum)" ]; then
+    echo "FAIL 1: $(cat $f) != $t"
+fi
+
+# text arg
+# file exists with content -> file does not change
+orig_sum=$(cat $f | md5sum)
+$x -t $t $f
+if [ "$(cat $f|md5sum)" != "$orig_sum" ]; then
+    echo "FAIL 2: $(cat $f) != $t"
+fi
+
+# new text arg
+# file exists with content -> file has old content + new content
+t2=lollipop
+orig_content=$(cat $f; echo $t2)
+orig_sum=$(
+md5sum <<-EOS
+$orig_content
+EOS
+)
+
+$x -t $t2 $f
+if [ "$(cat $f|md5sum)" != "$orig_sum" ]; then
+    echo "FAIL 3: $(cat $f) != $orig_content"
+fi

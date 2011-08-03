@@ -1,0 +1,92 @@
+#!/usr/bin/ruby
+
+=begin
+    Appends content to a file if the content does not already exist
+    in the file
+=end
+
+=begin
+    usage: $0 text file # insert text in file
+    usage: $0 -f source file # read contents of source and insert in file
+=end
+
+require 'tempfile'
+require 'fileutils'
+require 'optparse'
+
+source = nil
+text = nil
+
+args = OptionParser.new do |opts|
+  opts.banner = "Usage: #{$0} [options] FILE"
+  opts.on("-f", "--source=SOURCE", "Read input string from SOURCE") { |source| }
+  opts.on("-t", "--text=TEXT", "Append TEXT to file") { |text| }
+end
+
+begin
+  args.parse!
+rescue OptionParser::MissingArgument
+  args.warn
+  exit(2)
+end
+
+if source 
+    begin
+        text = File.read(source)
+    rescue
+        warn "Error reading source #{source}. #{$1}"
+        exit 1
+    end
+elsif !text
+  args.warn("must provide source or text argument")
+  exit(2)
+end
+
+file = ARGV[0]
+
+if file.nil?
+  usage("missing target file name argument")
+  exit(2)
+end
+
+append = false
+data = nil 
+
+if File.exists?(file)
+    begin
+        data = File.read(file)
+        if data.index(text).nil?
+            append = true
+        else
+            exit 0 # text already exists in file
+        end
+    rescue
+        warn "Error reading file #{file}. #{$1}"
+        exit 1
+    end
+else
+    append = true
+end
+
+if append
+    begin
+        tmp = Tempfile.new(File.dirname(file))
+        tmp.puts(data) unless data.nil?
+        tmp.puts(text) 
+        tmp.close
+        FileUtils.mv(tmp.path, file)
+    rescue
+        warn "Error writing data to file #{file}. #{$1}"
+        exit 1
+    end
+end
+
+exit 0
+
+BEGIN {
+  def usage(msg=nil)
+    warn msg if msg
+    warn "usage #{$0} TEXT FILE"
+    warn "usage #{$0} -f SOURCE FILE"
+  end
+}
