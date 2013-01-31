@@ -1,14 +1,13 @@
 #!/bin/sh
 
-#set -e
-
 cd $(dirname $0)
 
 x=./append-if-missing
 t=pear
-f=t/x
+testdir=t
+f=$testdir/x
 
-mkdir -p t
+mkdir -p $testdir
 rm -f $f
 
 # missing args
@@ -78,3 +77,6 @@ $x -t $t2 $f
 if [ "$(cat $f|md5sum)" != "$orig_sum" ]; then
     echo "FAIL 3: $(cat $f) != $orig_content"
 fi
+
+# cleanup
+rm -rf $testdir
