@@ -5,7 +5,9 @@ Description:
 
   It is useful for system administration tasks where
   one wishes to add a snippet of configuration to a file if it does
-  not already exist. It is most useful for automated system administration.
+  not already exist. It is most useful for automated system administration,
+  such as adding keys to a user's ssh authorized_keys file or any other file
+  whose contents need to be unique.
 
   Its functionality could be, and has been, duplicated by various
   shell incantations. This file was created after too many such
